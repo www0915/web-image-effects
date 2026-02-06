@@ -18,6 +18,42 @@
             color: #333;
         }
 
+        .upload-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 40px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            border-color: #4CAF50;
+            background: #f9f9f9;
+        }
+
+        .upload-area.dragover {
+            border-color: #4CAF50;
+            background: #e8f5e9;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .upload-text {
+            color: #666;
+            font-size: 1.1em;
+        }
+
         .filter-container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -33,8 +69,8 @@
         }
 
         /* エッジ検出デモの背景を明るい色に（透過確認用） */
-        .filter-demo:nth-child(4),
-        .filter-demo:nth-child(5) {
+        .filter-demo:nth-child(2),
+        .filter-demo:nth-child(3) {
             background: 
                 linear-gradient(45deg, #f0f0f0 25%, white 25%),
                 linear-gradient(-45deg, #f0f0f0 25%, white 25%),
@@ -60,32 +96,10 @@
             position: relative;
         }
 
-        .neon-text {
-            filter: url(#neonGlow);
-            font-size: 2em;
-            color: #00ff00;
-            text-align: center;
-        }
-
         .watercolor-image {
             filter: url(#watercolor);
             max-width: 100%;
             height: auto;
-        }
-
-        .morphing-element {
-            filter: url(#morphing);
-            font-size: 1.5em;
-            padding: 10px 20px;
-            background: #4CAF50;
-            color: white;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: transform 0.3s ease;
-        }
-
-        .morphing-element:hover {
-            transform: scale(1.1);
         }
 
         .edge-image {
@@ -121,20 +135,6 @@
             z-index: 1;
         }
 
-        .sharpen-text {
-            filter: url(#sharpen);
-            font-size: 2em;
-            color: #333;
-            text-align: center;
-            font-weight: bold;
-        }
-
-        .emboss-image {
-            filter: url(#emboss);
-            max-width: 100%;
-            height: auto;
-        }
-
         .controls {
             margin-top: 10px;
         }
@@ -148,42 +148,48 @@
         input[type="range"] {
             width: 100%;
         }
+
+        .download-btn {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .download-btn:hover {
+            background: #45a049;
+        }
+
+        .reset-btn {
+            margin-left: 10px;
+            padding: 8px 16px;
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .reset-btn:hover {
+            background: #da190b;
+        }
     </style>
 </head>
 <body>
     <!-- SVGフィルターの定義 -->
     <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="0" height="0">
         <defs>
-            <!-- ネオングローフィルター -->
-            <filter id="neonGlow" x="-50%" y="-50%" width="200%" height="200%">
-                <feFlood flood-color="#00ff00" flood-opacity="0.5" result="glow"/>
-                <feComposite in="glow" operator="in" in2="SourceGraphic" result="coloredGlow"/>
-                <feGaussianBlur in="coloredGlow" stdDeviation="4" result="blur"/>
-                <feMerge>
-                    <feMergeNode in="blur"/>
-                    <feMergeNode in="blur"/>
-                    <feMergeNode in="SourceGraphic"/>
-                </feMerge>
-            </filter>
-
             <!-- 水彩画風フィルター -->
             <filter id="watercolor" x="-50%" y="-50%" width="200%" height="200%">
                 <feTurbulence type="fractalNoise" baseFrequency="0.01" numOctaves="3" result="noise"/>
                 <feDisplacementMap in="SourceGraphic" in2="noise" scale="20" xChannelSelector="R" yChannelSelector="G"/>
                 <feGaussianBlur stdDeviation="1"/>
                 <feComposite operator="in" in2="SourceGraphic"/>
-            </filter>
-
-            <!-- モーフィングフィルター -->
-            <filter id="morphing" x="-50%" y="-50%" width="200%" height="200%">
-                <feMorphology operator="dilate" radius="2" result="dilate"/>
-                <feColorMatrix in="dilate" type="matrix"
-                    values="1 0 0 0 0
-                            0 1 0 0 0
-                            0 0 1 0 0
-                            0 0 0 0.5 0"/>
-                <feGaussianBlur stdDeviation="2"/>
-                <feComposite operator="over" in="SourceGraphic"/>
             </filter>
 
             <!-- エッジ検出フィルター (feConvolveMatrix) - エッジのみ黒線で表示＋背景透過 -->
@@ -234,72 +240,34 @@
                             0 0 0 0 0
                             1 1 1 0 -2"/>
             </filter>
-
-            <!-- シャープネスフィルター (feConvolveMatrix) -->
-            <filter id="sharpen" x="-10%" y="-10%" width="120%" height="120%">
-                <feConvolveMatrix 
-                    order="3" 
-                    kernelMatrix=" 0 -1  0
-                                  -1  5 -1
-                                   0 -1  0"
-                    preserveAlpha="true"/>
-            </filter>
-
-            <!-- エンボスフィルター (feConvolveMatrix) -->
-            <filter id="emboss" x="-10%" y="-10%" width="120%" height="120%">
-                <feConvolveMatrix 
-                    order="3" 
-                    kernelMatrix="-2 -1  0
-                                  -1  1  1
-                                   0  1  2"
-                    preserveAlpha="true"/>
-                <feOffset dx="2" dy="2"/>
-            </filter>
         </defs>
     </svg>
 
-    <h1>SVGフィルターデモ</h1>
+    <h1>SVGフィルターデモ - 画像加工ツール</h1>
+
+    <!-- 画像アップロードエリア -->
+    <div class="upload-section">
+        <h2>画像をアップロード</h2>
+        <div class="upload-area" id="uploadArea">
+            <p class="upload-text">クリックまたはドラッグ&ドロップで画像を選択</p>
+            <input type="file" id="fileInput" accept="image/*">
+        </div>
+        <button class="reset-btn" id="resetBtn" style="display: none; margin-top: 10px;">デフォルト画像に戻す</button>
+    </div>
 
     <div class="filter-container">
-        <!-- ネオングロー効果のデモ -->
-        <div class="filter-demo">
-            <h2 class="demo-title">ネオングロー効果</h2>
-            <div class="filter-target">
-                <div class="neon-text">Neon Glow</div>
-            </div>
-            <div class="controls">
-                <label>
-                    グロー強度:
-                    <input type="range" min="0" max="10" value="4" id="glowIntensity">
-                </label>
-            </div>
-        </div>
-
         <!-- 水彩画風効果のデモ -->
         <div class="filter-demo">
             <h2 class="demo-title">水彩画風効果</h2>
             <div class="filter-target">
-                <img src="./images/test.jpg" alt="サンプル画像" class="watercolor-image">
+                <img id="watercolorImg" src="./images/test.jpg" alt="サンプル画像" class="watercolor-image">
             </div>
             <div class="controls">
                 <label>
                     歪み強度:
                     <input type="range" min="0" max="50" value="20" id="watercolorIntensity">
                 </label>
-            </div>
-        </div>
-
-        <!-- モーフィング効果のデモ -->
-        <div class="filter-demo">
-            <h2 class="demo-title">モーフィング効果</h2>
-            <div class="filter-target">
-                <div class="morphing-element">Hover me!</div>
-            </div>
-            <div class="controls">
-                <label>
-                    変形強度:
-                    <input type="range" min="1" max="5" value="2" id="morphingIntensity">
-                </label>
+                <button class="download-btn" id="downloadWatercolor">ダウンロード</button>
             </div>
         </div>
 
@@ -307,7 +275,7 @@
         <div class="filter-demo">
             <h2 class="demo-title">エッジ検出効果 (feConvolveMatrix)</h2>
             <div class="filter-target">
-                <img src="./images/test.jpg" alt="サンプル画像" class="edge-image">
+                <img id="edgeImg" src="./images/test.jpg" alt="サンプル画像" class="edge-image">
             </div>
             <div class="controls">
                 <label>
@@ -322,6 +290,7 @@
                     感度: <span id="edgeSensitivityValue">-2</span>
                     <input type="range" min="-4" max="-1" step="0.1" value="-2" id="edgeSensitivity">
                 </label>
+                <button class="download-btn" id="downloadEdge">ダウンロード</button>
             </div>
         </div>
 
@@ -330,8 +299,8 @@
             <h2 class="demo-title">エッジ検出 + 水彩画風効果</h2>
             <div class="filter-target">
                 <div class="layered-container">
-                    <img src="./images/test.jpg" alt="水彩画レイヤー" class="watercolor-layer">
-                    <img src="./images/test.jpg" alt="エッジレイヤー" class="edge-layer">
+                    <img id="watercolorLayerImg" src="./images/test.jpg" alt="水彩画レイヤー" class="watercolor-layer">
+                    <img id="edgeLayerImg" src="./images/test.jpg" alt="エッジレイヤー" class="edge-layer">
                 </div>
             </div>
             <div class="controls">
@@ -351,45 +320,76 @@
                     エッジ感度: <span id="edgeSensitivityCombinedValue">-2</span>
                     <input type="range" min="-4" max="-1" step="0.1" value="-2" id="edgeSensitivityCombined">
                 </label>
-            </div>
-        </div>
-
-        <!-- シャープネス効果のデモ -->
-        <div class="filter-demo">
-            <h2 class="demo-title">シャープネス効果 (feConvolveMatrix)</h2>
-            <div class="filter-target">
-                <div class="sharpen-text">SHARP TEXT</div>
-            </div>
-            <div class="controls">
-                <label>
-                    シャープ度: (カーネルマトリックスは固定)
-                    <input type="range" min="1" max="3" value="1" id="sharpenIntensity" disabled>
-                </label>
-            </div>
-        </div>
-
-        <!-- エンボス効果のデモ -->
-        <div class="filter-demo">
-            <h2 class="demo-title">エンボス効果 (feConvolveMatrix)</h2>
-            <div class="filter-target">
-                <img src="./images/test.jpg" alt="サンプル画像" class="emboss-image">
-            </div>
-            <div class="controls">
-                <label>
-                    エンボス深度: (カーネルマトリックスは固定)
-                    <input type="range" min="1" max="3" value="1" id="embossIntensity" disabled>
-                </label>
+                <button class="download-btn" id="downloadCombined">ダウンロード</button>
             </div>
         </div>
     </div>
 
     <script>
-        // ネオングロー効果の制御
-        document.getElementById('glowIntensity').addEventListener('input', function(e) {
-            const value = e.target.value;
-            const filter = document.getElementById('neonGlow');
-            const blur = filter.querySelector('feGaussianBlur');
-            blur.setAttribute('stdDeviation', value);
+        const DEFAULT_IMAGE = './images/test.jpg';
+        let currentImageUrl = DEFAULT_IMAGE;
+
+        // 画像アップロード処理
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const resetBtn = document.getElementById('resetBtn');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        // ドラッグ&ドロップ
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                loadImage(file);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                loadImage(file);
+            }
+        });
+
+        function loadImage(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                currentImageUrl = e.target.result;
+                updateAllImages(currentImageUrl);
+                resetBtn.style.display = 'inline-block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateAllImages(imageUrl) {
+            // 水彩画風
+            document.getElementById('watercolorImg').src = imageUrl;
+
+            // エッジ検出
+            document.getElementById('edgeImg').src = imageUrl;
+
+            // 組み合わせ
+            document.getElementById('watercolorLayerImg').src = imageUrl;
+            document.getElementById('edgeLayerImg').src = imageUrl;
+        }
+
+        // リセット機能
+        resetBtn.addEventListener('click', () => {
+            currentImageUrl = DEFAULT_IMAGE;
+            updateAllImages(DEFAULT_IMAGE);
+            resetBtn.style.display = 'none';
+            fileInput.value = '';
         });
 
         // 水彩画風効果の制御
@@ -398,14 +398,6 @@
             const filter = document.getElementById('watercolor');
             const displacementMap = filter.querySelector('feDisplacementMap');
             displacementMap.setAttribute('scale', value);
-        });
-
-        // モーフィング効果の制御
-        document.getElementById('morphingIntensity').addEventListener('input', function(e) {
-            const value = e.target.value;
-            const filter = document.getElementById('morphing');
-            const morphology = filter.querySelector('feMorphology');
-            morphology.setAttribute('radius', value);
         });
 
         // エッジ強度の調整
@@ -466,6 +458,41 @@
             const matrix = document.getElementById('edgeThresholdCombined');
             matrix.setAttribute('values',
                 `0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 0 ${value}`);
+        });
+
+        // ダウンロード機能
+        function downloadImage(elementId, filename) {
+            const element = document.getElementById(elementId);
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = element.naturalWidth;
+            canvas.height = element.naturalHeight;
+            
+            // SVGフィルタを適用した画像をキャンバスに描画
+            ctx.filter = getComputedStyle(element).filter;
+            ctx.drawImage(element, 0, 0);
+            
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        document.getElementById('downloadWatercolor').addEventListener('click', () => {
+            downloadImage('watercolorImg', 'watercolor-effect.png');
+        });
+
+        document.getElementById('downloadEdge').addEventListener('click', () => {
+            downloadImage('edgeImg', 'edge-detect.png');
+        });
+
+        document.getElementById('downloadCombined').addEventListener('click', () => {
+            downloadImage('edgeLayerImg', 'combined-effect.png');
         });
     </script>
 </body>
