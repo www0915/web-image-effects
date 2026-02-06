@@ -211,7 +211,13 @@
                     values="0 0 0 0 0
                             0 0 0 0 0
                             0 0 0 0 0
-                            1 1 1 0 -2"/>
+                            1 1 1 0 -2"
+                    result="blackEdges"/>
+                
+                <!-- 透明度を調整 -->
+                <feComponentTransfer id="edgeOpacity" in="blackEdges">
+                    <feFuncA type="linear" slope="1"/>
+                </feComponentTransfer>
             </filter>
 
             <!-- 組み合わせ用：水彩画風フィルター -->
@@ -238,7 +244,13 @@
                     values="0 0 0 0 0
                             0 0 0 0 0
                             0 0 0 0 0
-                            1 1 1 0 -2"/>
+                            1 1 1 0 -2"
+                    result="blackEdges"/>
+                
+                <!-- 透明度を調整 -->
+                <feComponentTransfer id="edgeOpacityCombined" in="blackEdges">
+                    <feFuncA type="linear" slope="1"/>
+                </feComponentTransfer>
             </filter>
         </defs>
     </svg>
@@ -280,7 +292,7 @@
             <div class="controls">
                 <label>
                     エッジ強度: <span id="edgeStrengthValue">9</span>
-                    <input type="range" min="5" max="15" value="9" step="1" id="edgeStrength">
+                    <input type="range" min="5" max="15" value="9" step="0.5" id="edgeStrength">
                 </label>
                 <label>
                     線の太さ: <span id="edgeThicknessValue">0</span>
@@ -290,6 +302,10 @@
                     感度: <span id="edgeSensitivityValue">-2</span>
                     <input type="range" min="-4" max="-1" step="0.1" value="-2" id="edgeSensitivity">
                 </label>
+                <!-- <label>
+                    透明度: <span id="edgeOpacityValue">100</span>%
+                    <input type="range" min="0" max="100" value="100" step="1" id="edgeOpacity">
+                </label> -->
                 <button class="download-btn" id="downloadEdge">ダウンロード</button>
             </div>
         </div>
@@ -310,7 +326,7 @@
                 </label>
                 <label>
                     エッジ強度: <span id="edgeStrengthCombinedValue">9</span>
-                    <input type="range" min="5" max="15" value="9" step="1" id="edgeStrengthCombined">
+                    <input type="range" min="5" max="15" value="9" step="0.5" id="edgeStrengthCombined">
                 </label>
                 <label>
                     エッジ線の太さ: <span id="edgeThicknessCombinedValue">0</span>
@@ -320,6 +336,10 @@
                     エッジ感度: <span id="edgeSensitivityCombinedValue">-2</span>
                     <input type="range" min="-4" max="-1" step="0.1" value="-2" id="edgeSensitivityCombined">
                 </label>
+                <!-- <label>
+                    エッジ透明度: <span id="edgeOpacityCombinedValue">100</span>%
+                    <input type="range" min="0" max="100" value="100" step="1" id="edgeOpacityCombined">
+                </label> -->
                 <button class="download-btn" id="downloadCombined">ダウンロード</button>
             </div>
         </div>
@@ -400,7 +420,7 @@
             displacementMap.setAttribute('scale', value);
         });
 
-        // エッジ強度の調整
+        // エッジ強度の調整（小数点対応）
         document.getElementById('edgeStrength').addEventListener('input', function(e) {
             const value = e.target.value;
             document.getElementById('edgeStrengthValue').textContent = value;
@@ -426,6 +446,15 @@
                 `0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 0 ${value}`);
         });
 
+        // エッジ透明度の調整
+        document.getElementById('edgeOpacity').addEventListener('input', function(e) {
+            const value = e.target.value;
+            document.getElementById('edgeOpacityValue').textContent = value;
+            const opacity = document.getElementById('edgeOpacity');
+            const slope = value / 100; // 0-100を0-1に変換
+            opacity.querySelector('feFuncA').setAttribute('slope', slope);
+        });
+
         // 組み合わせ：水彩画歪みの調整
         document.getElementById('watercolorCombinedSlider').addEventListener('input', function(e) {
             const value = e.target.value;
@@ -434,7 +463,7 @@
             displacementMap.setAttribute('scale', value);
         });
 
-        // 組み合わせ：エッジ強度の調整
+        // 組み合わせ：エッジ強度の調整（小数点対応）
         document.getElementById('edgeStrengthCombined').addEventListener('input', function(e) {
             const value = e.target.value;
             document.getElementById('edgeStrengthCombinedValue').textContent = value;
@@ -458,6 +487,15 @@
             const matrix = document.getElementById('edgeThresholdCombined');
             matrix.setAttribute('values',
                 `0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 0 ${value}`);
+        });
+
+        // 組み合わせ：エッジ透明度の調整
+        document.getElementById('edgeOpacityCombined').addEventListener('input', function(e) {
+            const value = e.target.value;
+            document.getElementById('edgeOpacityCombinedValue').textContent = value;
+            const opacity = document.getElementById('edgeOpacityCombined');
+            const slope = value / 100; // 0-100を0-1に変換
+            opacity.querySelector('feFuncA').setAttribute('slope', slope);
         });
 
         // ダウンロード機能
