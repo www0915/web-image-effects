@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVGフィルターデモ</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .filter-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .filter-demo {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* エッジ検出デモの背景を明るい色に（透過確認用） */
+        .filter-demo:nth-child(4),
+        .filter-demo:nth-child(5) {
+            background: 
+                linear-gradient(45deg, #f0f0f0 25%, white 25%),
+                linear-gradient(-45deg, #f0f0f0 25%, white 25%),
+                linear-gradient(45deg, white 75%, #f0f0f0 75%),
+                linear-gradient(-45deg, white 75%, #f0f0f0 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+
+        .demo-title {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .filter-target {
+            width: 100%;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px 0;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .neon-text {
+            filter: url(#neonGlow);
+            font-size: 2em;
+            color: #00ff00;
+            text-align: center;
+        }
+
+        .watercolor-image {
+            filter: url(#watercolor);
+            max-width: 100%;
+            height: auto;
+        }
+
+        .morphing-element {
+            filter: url(#morphing);
+            font-size: 1.5em;
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .morphing-element:hover {
+            transform: scale(1.1);
+        }
+
+        .edge-image {
+            filter: url(#edgeDetect);
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* 重ね合わせ用のスタイル */
+        .layered-container {
+            position: relative;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .watercolor-layer {
+            filter: url(#watercolorCombined);
+            max-width: 100%;
+            height: auto;
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .edge-layer {
+            filter: url(#edgeDetectCombined);
+            max-width: 100%;
+            height: auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .sharpen-text {
+            filter: url(#sharpen);
+            font-size: 2em;
+            color: #333;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .emboss-image {
+            filter: url(#emboss);
+            max-width: 100%;
+            height: auto;
+        }
+
+        .controls {
+            margin-top: 10px;
+        }
+
+        .controls label {
+            display: block;
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+
+        input[type="range"] {
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <!-- SVGフィルターの定義 -->
+    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="0" height="0">
+        <defs>
+            <!-- ネオングローフィルター -->
+            <filter id="neonGlow" x="-50%" y="-50%" width="200%" height="200%">
+                <feFlood flood-color="#00ff00" flood-opacity="0.5" result="glow"/>
+                <feComposite in="glow" operator="in" in2="SourceGraphic" result="coloredGlow"/>
+                <feGaussianBlur in="coloredGlow" stdDeviation="4" result="blur"/>
+                <feMerge>
+                    <feMergeNode in="blur"/>
+                    <feMergeNode in="blur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+            </filter>
+
+            <!-- 水彩画風フィルター -->
+            <filter id="watercolor" x="-50%" y="-50%" width="200%" height="200%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.01" numOctaves="3" result="noise"/>
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="20" xChannelSelector="R" yChannelSelector="G"/>
+                <feGaussianBlur stdDeviation="1"/>
+                <feComposite operator="in" in2="SourceGraphic"/>
+            </filter>
+
+            <!-- モーフィングフィルター -->
+            <filter id="morphing" x="-50%" y="-50%" width="200%" height="200%">
+                <feMorphology operator="dilate" radius="2" result="dilate"/>
+                <feColorMatrix in="dilate" type="matrix"
+                    values="1 0 0 0 0
+                            0 1 0 0 0
+                            0 0 1 0 0
+                            0 0 0 0.5 0"/>
+                <feGaussianBlur stdDeviation="2"/>
+                <feComposite operator="over" in="SourceGraphic"/>
+            </filter>
+
+            <!-- エッジ検出フィルター (feConvolveMatrix) - エッジのみ黒線で表示＋背景透過 -->
+            <filter id="edgeDetect" x="-10%" y="-10%" width="120%" height="120%">
+                <!-- エッジ検出 -->
+                <feConvolveMatrix 
+                    id="edgeKernel"
+                    order="3" 
+                    kernelMatrix="-1 -1 -1
+                                  -1  9 -1
+                                  -1 -1 -1"
+                    result="edges"/>
+                
+                <!-- 線を太くする -->
+                <feMorphology id="edgeThickness" operator="dilate" radius="0" in="edges" result="thickEdges"/>
+                
+                <!-- エッジ部分を黒に、背景を透明に -->
+                <feColorMatrix id="edgeThreshold" in="thickEdges" type="matrix"
+                    values="0 0 0 0 0
+                            0 0 0 0 0
+                            0 0 0 0 0
+                            1 1 1 0 -2"/>
+            </filter>
+
+            <!-- 組み合わせ用：水彩画風フィルター -->
+            <filter id="watercolorCombined" x="-50%" y="-50%" width="200%" height="200%">
+                <feTurbulence id="watercolorNoiseCombined" type="fractalNoise" baseFrequency="0.01" numOctaves="3" result="noise"/>
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="20" xChannelSelector="R" yChannelSelector="G" id="watercolorDisplacementCombined"/>
+                <feGaussianBlur stdDeviation="1" id="watercolorBlurCombined"/>
+                <feComposite operator="in" in2="SourceGraphic"/>
+            </filter>
+
+            <!-- 組み合わせ用：エッジ検出フィルター -->
+            <filter id="edgeDetectCombined" x="-10%" y="-10%" width="120%" height="120%">
+                <feConvolveMatrix 
+                    id="edgeKernelCombined"
+                    order="3" 
+                    kernelMatrix="-1 -1 -1
+                                  -1  9 -1
+                                  -1 -1 -1"
+                    result="edges"/>
+                
+                <feMorphology id="edgeThicknessCombined" operator="dilate" radius="0" in="edges" result="thickEdges"/>
+                
+                <feColorMatrix id="edgeThresholdCombined" in="thickEdges" type="matrix"
+                    values="0 0 0 0 0
+                            0 0 0 0 0
+                            0 0 0 0 0
+                            1 1 1 0 -2"/>
+            </filter>
+
+            <!-- シャープネスフィルター (feConvolveMatrix) -->
+            <filter id="sharpen" x="-10%" y="-10%" width="120%" height="120%">
+                <feConvolveMatrix 
+                    order="3" 
+                    kernelMatrix=" 0 -1  0
+                                  -1  5 -1
+                                   0 -1  0"
+                    preserveAlpha="true"/>
+            </filter>
+
+            <!-- エンボスフィルター (feConvolveMatrix) -->
+            <filter id="emboss" x="-10%" y="-10%" width="120%" height="120%">
+                <feConvolveMatrix 
+                    order="3" 
+                    kernelMatrix="-2 -1  0
+                                  -1  1  1
+                                   0  1  2"
+                    preserveAlpha="true"/>
+                <feOffset dx="2" dy="2"/>
+            </filter>
+        </defs>
+    </svg>
+
+    <h1>SVGフィルターデモ</h1>
+
+    <div class="filter-container">
+        <!-- ネオングロー効果のデモ -->
+        <div class="filter-demo">
+            <h2 class="demo-title">ネオングロー効果</h2>
+            <div class="filter-target">
+                <div class="neon-text">Neon Glow</div>
+            </div>
+            <div class="controls">
+                <label>
+                    グロー強度:
+                    <input type="range" min="0" max="10" value="4" id="glowIntensity">
+                </label>
+            </div>
+        </div>
+
+        <!-- 水彩画風効果のデモ -->
+        <div class="filter-demo">
+            <h2 class="demo-title">水彩画風効果</h2>
+            <div class="filter-target">
+                <img src="/images/test.jpg" alt="サンプル画像" class="watercolor-image">
+            </div>
+            <div class="controls">
+                <label>
+                    歪み強度:
+                    <input type="range" min="0" max="50" value="20" id="watercolorIntensity">
+                </label>
+            </div>
+        </div>
+
+        <!-- モーフィング効果のデモ -->
+        <div class="filter-demo">
+            <h2 class="demo-title">モーフィング効果</h2>
+            <div class="filter-target">
+                <div class="morphing-element">Hover me!</div>
+            </div>
+            <div class="controls">
+                <label>
+                    変形強度:
+                    <input type="range" min="1" max="5" value="2" id="morphingIntensity">
+                </label>
+            </div>
+        </div>
+
+        <!-- エッジ検出効果のデモ -->
+        <div class="filter-demo">
+            <h2 class="demo-title">エッジ検出効果 (feConvolveMatrix)</h2>
+            <div class="filter-target">
+                <img src="/images/test.jpg" alt="サンプル画像" class="edge-image">
+            </div>
+            <div class="controls">
+                <label>
+                    エッジ強度: <span id="edgeStrengthValue">9</span>
+                    <input type="range" min="5" max="15" value="9" step="1" id="edgeStrength">
+                </label>
+                <label>
+                    線の太さ: <span id="edgeThicknessValue">0</span>
+                    <input type="range" min="0" max="3" value="0" step="1" id="edgeThicknessSlider">
+                </label>
+                <label>
+                    感度: <span id="edgeSensitivityValue">-2</span>
+                    <input type="range" min="-4" max="-1" step="0.1" value="-2" id="edgeSensitivity">
+                </label>
+            </div>
+        </div>
+
+        <!-- エッジ検出 + 水彩画風の組み合わせ -->
+        <div class="filter-demo">
+            <h2 class="demo-title">エッジ検出 + 水彩画風効果</h2>
+            <div class="filter-target">
+                <div class="layered-container">
+                    <img src="/images/test.jpg" alt="水彩画レイヤー" class="watercolor-layer">
+                    <img src="/images/test.jpg" alt="エッジレイヤー" class="edge-layer">
+                </div>
+            </div>
+            <div class="controls">
+                <label>
+                    水彩画歪み: <span id="watercolorCombinedValue">20</span>
+                    <input type="range" min="0" max="50" value="20" id="watercolorCombinedSlider">
+                </label>
+                <label>
+                    エッジ強度: <span id="edgeStrengthCombinedValue">9</span>
+                    <input type="range" min="5" max="15" value="9" step="1" id="edgeStrengthCombined">
+                </label>
+                <label>
+                    エッジ線の太さ: <span id="edgeThicknessCombinedValue">0</span>
+                    <input type="range" min="0" max="3" value="0" step="1" id="edgeThicknessCombinedSlider">
+                </label>
+                <label>
+                    エッジ感度: <span id="edgeSensitivityCombinedValue">-2</span>
+                    <input type="range" min="-4" max="-1" step="0.1" value="-2" id="edgeSensitivityCombined">
+                </label>
+            </div>
+        </div>
+
+        <!-- シャープネス効果のデモ -->
+        <div class="filter-demo">
+            <h2 class="demo-title">シャープネス効果 (feConvolveMatrix)</h2>
+            <div class="filter-target">
+                <div class="sharpen-text">SHARP TEXT</div>
+            </div>
+            <div class="controls">
+                <label>
+                    シャープ度: (カーネルマトリックスは固定)
+                    <input type="range" min="1" max="3" value="1" id="sharpenIntensity" disabled>
+                </label>
+            </div>
+        </div>
+
+        <!-- エンボス効果のデモ -->
+        <div class="filter-demo">
+            <h2 class="demo-title">エンボス効果 (feConvolveMatrix)</h2>
+            <div class="filter-target">
+                <img src="/images/test.jpg" alt="サンプル画像" class="emboss-image">
+            </div>
+            <div class="controls">
+                <label>
+                    エンボス深度: (カーネルマトリックスは固定)
+                    <input type="range" min="1" max="3" value="1" id="embossIntensity" disabled>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ネオングロー効果の制御
+        document.getElementById('glowIntensity').addEventListener('input', function(e) {
+            const value = e.target.value;
+            const filter = document.getElementById('neonGlow');
+            const blur = filter.querySelector('feGaussianBlur');
+            blur.setAttribute('stdDeviation', value);
+        });
+
+        // 水彩画風効果の制御
+        document.getElementById('watercolorIntensity').addEventListener('input', function(e) {
+            const value = e.target.value;
+            const filter = document.getElementById('watercolor');
+            const displacementMap = filter.querySelector('feDisplacementMap');
+            displacementMap.setAttribute('scale', value);
+        });
+
+        // モーフィング効果の制御
+        document.getElementById('morphingIntensity').addEventListener('input', function(e) {
+            const value = e.target.value;
+            const filter = document.getElementById('morphing');
+            const morphology = filter.querySelector('feMorphology');
+            morphology.setAttribute('radius', value);
+        });
+
+        // エッジ強度の調整
+        document.getElementById('edgeStrength').addEventListener('input', function(e) {
+            const value = e.target.value;
+            document.getElementById('edgeStrengthValue').textContent = value;
+            const kernel = document.getElementById('edgeKernel');
+            kernel.setAttribute('kernelMatrix', 
+                `-1 -1 -1 -1 ${value} -1 -1 -1 -1`);
+        });
+
+        // エッジの線の太さの調整
+        document.getElementById('edgeThicknessSlider').addEventListener('input', function(e) {
+            const value = e.target.value;
+            document.getElementById('edgeThicknessValue').textContent = value;
+            const morphology = document.getElementById('edgeThickness');
+            morphology.setAttribute('radius', value);
+        });
+
+        // エッジ感度の調整
+        document.getElementById('edgeSensitivity').addEventListener('input', function(e) {
+            const value = e.target.value;
+            document.getElementById('edgeSensitivityValue').textContent = value;
+            const matrix = document.getElementById('edgeThreshold');
+            matrix.setAttribute('values',
+                `0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 0 ${value}`);
+        });
+
+        // 組み合わせ：水彩画歪みの調整
+        document.getElementById('watercolorCombinedSlider').addEventListener('input', function(e) {
+            const value = e.target.value;
+            document.getElementById('watercolorCombinedValue').textContent = value;
+            const displacementMap = document.getElementById('watercolorDisplacementCombined');
+            displacementMap.setAttribute('scale', value);
+        });
+
+        // 組み合わせ：エッジ強度の調整
+        document.getElementById('edgeStrengthCombined').addEventListener('input', function(e) {
+            const value = e.target.value;
+            document.getElementById('edgeStrengthCombinedValue').textContent = value;
+            const kernel = document.getElementById('edgeKernelCombined');
+            kernel.setAttribute('kernelMatrix', 
+                `-1 -1 -1 -1 ${value} -1 -1 -1 -1`);
+        });
+
+        // 組み合わせ：エッジの線の太さの調整
+        document.getElementById('edgeThicknessCombinedSlider').addEventListener('input', function(e) {
+            const value = e.target.value;
+            document.getElementById('edgeThicknessCombinedValue').textContent = value;
+            const morphology = document.getElementById('edgeThicknessCombined');
+            morphology.setAttribute('radius', value);
+        });
+
+        // 組み合わせ：エッジ感度の調整
+        document.getElementById('edgeSensitivityCombined').addEventListener('input', function(e) {
+            const value = e.target.value;
+            document.getElementById('edgeSensitivityCombinedValue').textContent = value;
+            const matrix = document.getElementById('edgeThresholdCombined');
+            matrix.setAttribute('values',
+                `0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 0 ${value}`);
+        });
+    </script>
+</body>
+</html>
